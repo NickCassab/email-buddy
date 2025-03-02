@@ -136,18 +136,19 @@ class LocalLLMService(BaseLLMService):
                 print(f"Model file not found: {self.model_path}")
                 return False
             
-            # Load the model with default parameters
-            # These can be expanded in future milestones
+            # Load the model with safer parameters
+            print(f"Loading model from: {self.model_path}")
             self.model = Llama(
                 model_path=self.model_path,
-                n_ctx=2048,        # Context window size
-                n_threads=4        # Default to 4 threads
+                n_ctx=512,        # Reduced context window
+                n_threads=2,      # Fewer threads
+                n_batch=8         # Smaller batch size
             )
             
             print(f"Successfully loaded model: {self.model_path}")
             return True
-        except ImportError:
-            print("llama-cpp-python package not installed. Please install it to use local models.")
+        except ImportError as e:
+            print(f"llama-cpp-python package error: {str(e)}")
             return False
         except Exception as e:
             print(f"Error loading local LLM model: {str(e)}")
@@ -176,34 +177,29 @@ class LocalLLMService(BaseLLMService):
             system_prompt += f"\n\n{custom_instructions}"
         
         try:
-            # Format prompt for Llama-2 chat format
-            prompt = f"""<s>[INST] <<SYS>>
-{system_prompt}
-<</SYS>>
+            # Format a simpler prompt
+            prompt = f"You are an email assistant. {system_prompt}\n\nEmail from: {sender}\nSubject: {subject}\n\nBody: {body}\n\nPlease write a reply:"
 
-Please draft a reply to this email:
-
-From: {sender}
-Subject: {subject}
-
-{body} [/INST]"""
-
-            # Generate response
+            # Generate response with simpler parameters
             response = self.model(
                 prompt,
-                max_tokens=500,
+                max_tokens=256,
                 temperature=0.7,
-                stop=["</s>"]
+                echo=False
             )
             
             # Extract the generated text
-            reply_content = response['choices'][0]['text'].strip()
+            if isinstance(response, dict) and 'choices' in response:
+                reply_content = response['choices'][0]['text'].strip()
+            else:
+                reply_content = str(response).strip()
+                
             return reply_content
             
         except Exception as e:
             print(f"Error generating reply with local LLM: {str(e)}")
             raise e
-
+    
 
 def create_llm_service(provider_type, config):
     """Factory function to create the appropriate LLM service"""
