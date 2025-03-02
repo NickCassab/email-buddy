@@ -88,6 +88,16 @@ class EmailProcessor:
         
         self._save_data()
     
+    def recalculate_importance_scores(self):
+        """Recalculate importance scores for all emails"""
+        for email in self.emails['important_emails']:
+         # Get full email content to recalculate
+            full_email = self.gmail_service.get_email(email['id'])
+            email['importance_score'] = self._calculate_importance(full_email)
+    
+    # Save updated data
+        self._save_data()
+
     def _calculate_importance(self, email):
         """Calculate an importance score for the email based on configurable weights"""
         score = 0

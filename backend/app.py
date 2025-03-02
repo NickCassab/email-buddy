@@ -249,6 +249,24 @@ def get_settings():
     
     return jsonify(settings)
 
+@app.route('/api/emails/recalculate-importance', methods=['POST'])
+def recalculate_importance():
+    """Recalculate importance scores for all emails"""
+    global email_processor
+    
+    if not gmail_service or not gmail_service.is_authenticated():
+        return jsonify({'error': 'Gmail service not configured'}), 401
+    
+    if not email_processor:
+        email_processor = EmailProcessor(gmail_service)
+    
+    try:
+        email_processor.recalculate_importance_scores()
+        important_emails = email_processor.get_important_emails()
+        return jsonify(important_emails)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/settings', methods=['POST'])
 def update_settings():
     """Update user settings"""

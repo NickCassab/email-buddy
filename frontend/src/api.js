@@ -112,6 +112,14 @@ export const getSettings = async () => {
 };
 
 /**
+ * Recalculate importance scores for emails
+ */
+export const recalculateImportance = async () => {
+  const response = await api.post('/emails/recalculate-importance');
+  return response.data;
+};
+
+/**
  * Update user settings
  */
 export const updateSettings = async (settings) => {
